@@ -13,11 +13,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum JobStatus {
+  pending
+  running
+  success
+  failed
+}
+
 model Submission {
-  id     Int    @id @default(autoincrement())
-  code   String
-  task   Task   @relation(fields: [taskId], references: [id])
-  taskId Int
+  id        Int       @id @default(autoincrement())
+  code      String
+  task      Task      @relation(fields: [taskId], references: [id])
+  taskId    Int
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  status    JobStatus @default(pending)
 }
 
 model Task {
