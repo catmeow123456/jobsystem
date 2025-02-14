@@ -1,30 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SubmissionService } from './submission.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { ClientsModule, Transport } from '@nestjs/microservices';
+import { KafkaService } from '../kafka/kafka.service';
 
 describe('SubmissionService', () => {
   let service: SubmissionService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [
-        ClientsModule.register([
-          {
-            name: 'KAFKA_SERVICE',
-            transport: Transport.KAFKA,
-            options: {
-              client: {
-                brokers: ['localhost:9092'],
-              },
-              consumer: {
-                groupId: 'submission-consumer',
-              },
-            },
-          },
-        ]),
-      ],
-      providers: [SubmissionService, PrismaService],
+      providers: [SubmissionService, PrismaService, KafkaService],
     }).compile();
 
     service = module.get<SubmissionService>(SubmissionService);

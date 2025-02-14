@@ -19,7 +19,7 @@ jobs:
         node-version: 23.x
     - name: Install
       run: yarn
-    - name: Init prisma
+    - name: Generate Prisma Client
       run: npx prisma generate
     - name: Build
       run: yarn build

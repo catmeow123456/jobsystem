@@ -97,3 +97,56 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+## Preparation
+
+### Init Postgresql
+
+To install PostgreSQL and create the `mydb` database, follow these steps:
+
+1. **Install PostgreSQL**:
+  ```bash
+  # Update the package list
+  $ sudo apt update
+
+  # Install PostgreSQL
+  $ sudo apt install postgresql postgresql-contrib
+  ```
+
+2. **Switch to the PostgreSQL user**:
+  ```bash
+  $ sudo -i -u postgres
+  ```
+
+3. **Create a new database**:
+  ```bash
+  $ createdb mydb
+  ```
+
+Your PostgreSQL installation is now complete, and the `mydb` database has been created.
+
+### Example .env file
+
+Create a `.env` file in the root of your project with the following content:
+
+```plaintext
+DATABASE_URL="postgresql://<USERNAME>:<PASSWORD>@localhost:5432/mydb?schema=public"
+```
+
+### Init kafka
+To initialize Kafka and start consuming messages, we use `docker-compose` to set up the Kafka environment. The following commands will help you get started:
+
+1. **Start the Kafka services using `docker-compose`**:
+```bash
+$ sudo docker-compose up -d
+```
+
+2. **Consume messages from the `submission.created` topic**:
+```
+kafkacat -b localhost:9092 -t "submission.created"
+```
+
+3. **Check the Kafka logs for any exceptions**:
+```
+sudo docker logs jobsystem_kafka1_1 | grep -i 'exception'
+```

@@ -1,14 +1,14 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JobStatus, Submission } from '@prisma/client';
 import { CreateSubmissionDto } from './dto/create-submission.dto';
-import { ClientKafka } from '@nestjs/microservices';
+import { KafkaService } from '../kafka/kafka.service';
 
 @Injectable()
 export class SubmissionService {
   constructor(
-    private prismaService: PrismaService,
-    @Inject('KAFKA_SERVICE') private kafkaProducer: ClientKafka,
+    private readonly prismaService: PrismaService,
+    private readonly kafkaService: KafkaService,
   ) {}
 
   async findAll(): Promise<Submission[]> {
@@ -29,13 +29,11 @@ export class SubmissionService {
       })
       .catch((error) => {
         throw new Error(`Failed to create submission: ${error}`);
-      })
-      .then((submission) => {
-        this.kafkaProducer.emit('submission.created', {
-          value: JSON.stringify(submission),
-        });
-        return submission;
       });
+    await this.kafkaService.sendMessage(
+      'submission.created',
+      JSON.stringify(submission),
+    );
     return submission;
   }
 }
