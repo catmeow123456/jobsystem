@@ -1,0 +1,27 @@
+name: CI
+
+on:
+- push
+- pull_request
+
+env:
+  CI: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out
+      uses: actions/checkout@v4
+    - name: Set up Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 23.x
+    - name: Install
+      run: yarn
+    - name: Build
+      run: yarn build
+    - name: Lint
+      run: yarn lint
+    - name: Test
+      run: yarn test
