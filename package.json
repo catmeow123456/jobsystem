@@ -27,6 +27,7 @@
     "@nestjs/schedule": "^5.0.1",
     "@prisma/client": "^6.3.1",
     "bullmq": "^5.40.4",
+    "dockerode": "^4.0.4",
     "kafkajs": "^2.2.4",
     "redis": "^4.7.0",
     "reflect-metadata": "^0.2.2",

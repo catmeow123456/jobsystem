@@ -20,14 +20,34 @@ enum JobStatus {
   failed
 }
 
+enum TaskEnvStatus {
+  active
+  inactive
+}
+
 model Submission {
   id        Int       @id @default(autoincrement())
   code      String
-  task      Task      @relation(fields: [taskId], references: [id])
-  taskId    Int
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   status    JobStatus @default(pending)
+
+  task   Task @relation(fields: [taskId], references: [id])
+  taskId Int
+}
+
+model TaskEnv {
+  id          Int           @id @default(autoincrement())
+  name        String        @unique
+  dockerImage String
+  status      TaskEnvStatus @default(inactive)
+
+  // TaskEnv 之间的依赖关系呈树状结构
+  father     TaskEnv?  @relation("TaskEnvDependency", fields: [fatherName], references: [name])
+  fatherName String?
+  children   TaskEnv[] @relation("TaskEnvDependency")
+  // TaskEnv 与 Task 之间的 Many-to-Many 关系
+  Task       Task[]    @relation("TaskEnvTask")
 }
 
 model Task {
@@ -37,6 +57,6 @@ model Task {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  environment String
   submissions Submission[]
+  taskEnv     TaskEnv[]    @relation("TaskEnvTask")
 }
