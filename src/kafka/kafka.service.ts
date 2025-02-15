@@ -1,45 +1,71 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Consumer, Kafka, Producer } from 'kafkajs';
+import { DockerService } from '../docker/docker.service';
+import { Submission, TaskEnv } from '@prisma/client';
 
 @Injectable()
 export class KafkaService implements OnModuleInit, OnModuleDestroy {
   private kafka: Kafka;
   private producer: Producer;
-  private consumer: Consumer;
+  private consumer1: Consumer;
+  private consumer2: Consumer;
 
-  constructor() {
+  constructor(private readonly dockerService: DockerService) {
     this.kafka = new Kafka({
       clientId: 'KAFKA_SERVICE',
       brokers: ['localhost:9092'],
     });
     this.producer = this.kafka.producer();
-    this.consumer = this.kafka.consumer({
-      groupId: 'test-group',
-      sessionTimeout: 30000,
-      rebalanceTimeout: 10000,
-    });
+    this.consumer1 = this.kafka.consumer({ groupId: 'group-1' });
+    this.consumer2 = this.kafka.consumer({ groupId: 'group-2' });
+  }
+
+  async handleMessage(message: any) {
+    console.log(message);
   }
 
   async onModuleInit() {
     await this.producer.connect();
-    await this.consumer.connect();
+    await this.consumer1.connect();
     console.log('Kafka producer and consumer connected');
-    await this.consumer.subscribe({ topic: 'submission.created' });
-    await this.consumer.run({
+    await this.consumer1.subscribe({ topic: 'submission.created' });
+    await this.consumer1.run({
       eachMessage: async ({ topic, partition, message }) => {
+        const messageValue = message.value?.toString();
         console.log({
           topic,
           partition,
           offset: message.offset,
-          value: message.value?.toString(),
+          value: messageValue,
         });
+        const submission: Submission = JSON.parse(messageValue || '{}');
+        await this.handleMessage(submission);
+      },
+    });
+    await this.consumer2.subscribe({ topic: 'taskEnv.created' });
+    await this.consumer2.run({
+      eachMessage: async ({ topic, partition, message }) => {
+        const messageValue = message.value?.toString();
+        console.log({
+          topic,
+          partition,
+          offset: message.offset,
+          value: messageValue,
+        });
+        const taskEnv: TaskEnv = JSON.parse(messageValue || '{}');
+        await this.handleMessage(taskEnv);
+        await this.dockerService.buildImageFromDockerfileContent(
+          taskEnv.dockerImage,
+          taskEnv.name,
+        );
       },
     });
   }
 
   async onModuleDestroy() {
     await this.producer.disconnect();
-    await this.consumer.disconnect();
+    await this.consumer1.disconnect();
+    await this.consumer2.disconnect();
     console.log('Kafka producer and consumer disconnected');
   }
 

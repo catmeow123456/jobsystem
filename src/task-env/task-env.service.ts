@@ -2,10 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TaskEnv, TaskEnvStatus } from '@prisma/client';
 import { CreateTaskEnvDto } from './dto/create-task-env.dto';
+import { KafkaService } from '../kafka/kafka.service';
 
 @Injectable()
 export class TaskEnvService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly kafkaService: KafkaService,
+  ) {}
 
   async findAll(): Promise<TaskEnv[]> {
     return this.prismaService.taskEnv.findMany();
@@ -38,17 +42,21 @@ export class TaskEnvService {
     return newTaskEnv;
   }
 
-  async buildImage(taskEnvName: string) {
-    const taskEnv = await this.prismaService.taskEnv.findUnique({
-      where: { name: taskEnvName },
-    });
+  async buildImage(taskEnvName: string): Promise<void> {
+    const taskEnv: TaskEnv | null = await this.prismaService.taskEnv.findUnique(
+      {
+        where: { name: taskEnvName },
+      },
+    );
     if (!taskEnv) {
       throw new Error(`TaskEnv ${taskEnvName} not found`);
     }
     if (taskEnv.status === TaskEnvStatus.active) {
       throw new Error(`TaskEnv ${taskEnvName} is already active`);
     }
-    // TODO: send message to kafka
-    // TODO: build image using docker
+    await this.kafkaService.sendMessage(
+      'taskEnv.created',
+      JSON.stringify(taskEnv),
+    );
   }
 }

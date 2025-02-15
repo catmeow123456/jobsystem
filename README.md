@@ -141,14 +141,16 @@ To initialize Kafka and start consuming messages, we use `docker-compose` to set
 $ sudo docker-compose up -d
 ```
 
-2. **Consume messages from the `submission.created` topic**:
+2. **Check the Kafka logs for any exceptions**:
 ```
-$ kafkacat -b localhost:9092 -t "submission.created"
+$ sudo docker logs <kafka-container-id> | grep -i 'exception'
 ```
 
-3. **Check the Kafka logs for any exceptions**:
-```
-$ sudo docker logs jobsystem_kafka1_1 | grep -i 'exception'
+3. **List Kafka topics and consumer groups**:
+```bash
+$ docker exec -it <kafka-container-id> /bin/bash
+$ kafka-topics --bootstrap-server localhost:9092 --list
+$ kafka-consumer-groups --bootstrap-server localhost:9092 --list
 ```
 
 ### Example of create new task and create new submission
@@ -156,4 +158,20 @@ $ sudo docker logs jobsystem_kafka1_1 | grep -i 'exception'
 $ curl -X POST http://localhost:3456/task -H "Content-Type: application/json" -d '{"name": "M*N", "description": "Hello World"}'
 
 $ curl -X POST http://localhost:3456/submission -H "Content-Type: application/json" -d '{"taskId": 2, "code": "print(1*2)"}'
+```
+
+## Test backend
+To test the backend, you can use the following command to create a new task environment:
+
+```bash
+$ curl -X POST http://localhost:3456/task-env/create -H "Content-Type: application/json" -d '{"name": "{taskEnvName}", "dockerImage": "{dockerImageContent}"}'
+$ curl -X POST http://localhost:3456/task-env/build-image -H "Content-Type: application/json" -d '{"taskEnvName": "{taskEnvName}"}'
+```
+
+Replace `{taskEnvName}` and `{dockerImageContent}` with the appropriate values for your task environment.
+
+For example:
+```bash
+$ curl -X POST http://localhost:3456/task-env/create -H "Content-Type: application/json" -d '{"name": "custom-a", "dockerImage": "FROM python:slim\nRUN pip install --no-cache-dir numpy\n"}'
+$ curl -X POST http://localhost:3456/task-env/build-image -H "Content-Type: application/json" -d '{"taskEnvName": "custom-a"}'
 ```
