@@ -143,10 +143,17 @@ $ sudo docker-compose up -d
 
 2. **Consume messages from the `submission.created` topic**:
 ```
-kafkacat -b localhost:9092 -t "submission.created"
+$ kafkacat -b localhost:9092 -t "submission.created"
 ```
 
 3. **Check the Kafka logs for any exceptions**:
 ```
-sudo docker logs jobsystem_kafka1_1 | grep -i 'exception'
+$ sudo docker logs jobsystem_kafka1_1 | grep -i 'exception'
+```
+
+### Example of create new task and create new submission
+```bash
+$ curl -X POST http://localhost:3456/task -H "Content-Type: application/json" -d '{"name": "M*N", "description": "Hello World"}'
+
+$ curl -X POST http://localhost:3456/submission -H "Content-Type: application/json" -d '{"taskId": 2, "code": "print(1*2)"}'
 ```

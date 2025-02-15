@@ -4,7 +4,7 @@ import { CreateTaskDto } from './dto/create-task.dto';
 
 @Controller('task')
 export class TaskController {
-  constructor(private taskService: TaskService) {}
+  constructor(private readonly taskService: TaskService) {}
 
   @Post()
   async createTask(@Body() dto: CreateTaskDto) {
