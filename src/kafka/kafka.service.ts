@@ -1,7 +1,8 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Consumer, Kafka, Producer } from 'kafkajs';
-import { DockerService } from '../docker/docker.service';
-import { Submission, TaskEnv } from '@prisma/client';
+import { BuildResult, DockerService } from '../docker/docker.service';
+import { Submission, TaskEnv, TaskEnvStatus } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class KafkaService implements OnModuleInit, OnModuleDestroy {
@@ -10,7 +11,10 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
   private consumer1: Consumer;
   private consumer2: Consumer;
 
-  constructor(private readonly dockerService: DockerService) {
+  constructor(
+    private readonly dockerService: DockerService,
+    private readonly prismaService: PrismaService,
+  ) {
     this.kafka = new Kafka({
       clientId: 'KAFKA_SERVICE',
       brokers: ['localhost:9092'],
@@ -54,10 +58,17 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
         });
         const taskEnv: TaskEnv = JSON.parse(messageValue || '{}');
         await this.handleMessage(taskEnv);
-        await this.dockerService.buildImageFromDockerfileContent(
-          taskEnv.dockerImage,
-          taskEnv.name,
-        );
+        const result: BuildResult =
+          await this.dockerService.buildImageFromDockerfileContent(
+            taskEnv.dockerImage,
+            taskEnv.name,
+          );
+        if (result.success) {
+          this.prismaService.taskEnv.update({
+            where: { id: taskEnv.id },
+            data: { status: TaskEnvStatus.active },
+          });
+        }
       },
     });
   }

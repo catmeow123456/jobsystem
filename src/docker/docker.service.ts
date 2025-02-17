@@ -3,6 +3,18 @@ import * as tar from 'tar-stream';
 import * as Docker from 'dockerode';
 import { Readable } from 'stream';
 
+export class BuildResult {
+  success: boolean;
+  message: string;
+  logs: string[];
+
+  constructor(success: boolean, message: string, logs: string[]) {
+    this.success = success;
+    this.message = message;
+    this.logs = logs;
+  }
+}
+
 @Injectable()
 export class DockerService {
   private docker: Docker;
@@ -14,7 +26,8 @@ export class DockerService {
     dockerfileContent: string,
     imageName: string,
     tag: string = 'latest',
-  ) {
+  ): Promise<BuildResult> {
+    let logs: string[] = [];
     try {
       // 创建一个 tar 包作为构建上下文
       const pack = tar.pack();
@@ -42,17 +55,19 @@ export class DockerService {
           stream,
           (err: Error, res: any) => {
             if (err) return reject(err);
-            console.log(res);
+            logs.push(`${res}`);
             resolve(res);
           },
           (event: any) => {
-            console.log(event);
+            logs.push(`${event.stream}`);
           },
         );
       });
       console.log(`Image ${imageName}:${tag} built successfully!`);
+      return new BuildResult(true, 'Build successful', logs);
     } catch (error) {
       console.error('Error building Docker image:', error);
+      return new BuildResult(false, 'Build failed', logs);
     }
   }
 

@@ -10,7 +10,12 @@ describe('SubmissionController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [SubmissionService, PrismaService, KafkaService, DockerService],
+      providers: [
+        SubmissionService,
+        PrismaService,
+        KafkaService,
+        DockerService,
+      ],
       controllers: [SubmissionController],
     }).compile();
 
